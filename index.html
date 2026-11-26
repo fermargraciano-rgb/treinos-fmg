@@ -78,7 +78,7 @@ h1,h2,h3{letter-spacing:-.01em}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tile{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:14px;border-radius:10px;border:1.5px solid var(--orange);background:var(--white);min-height:84px}
 .tile em{font-style:normal;font-size:26px;line-height:1;font-weight:800;color:var(--orange)}.tile.p em{color:var(--white)}.tile span{font-size:15px;font-weight:700}.tile.p{background:var(--orange);color:var(--white)}
-.tile.p span{color:var(--white)}.tile.r{background:var(--rd);border-color:var(--rd)}.tile.r em,.tile.r span{color:var(--white)}
+.tile.p span{color:var(--white)}.tile.r{grid-column:span 2;min-height:64px;background:var(--rd);border-color:var(--rd)}.tile.r em,.tile.r span{color:var(--white)}
 .link{background:none;border:0;color:var(--mut);font-size:13px;text-decoration:underline;width:100%;margin-top:6px;font-weight:500}svg text{fill:#6B6B6B;font-size:11px}
 </style></head><body>
 <div id="brand"></div>
@@ -192,9 +192,9 @@ function home(app){
   if(al.length){
     h+=`<div class="sec">Aluno</div>`;
     h+=`<select id="sel" aria-label="Escolher aluno"><option value="">Escolher aluno…</option>${al.map(a=>`<option value="${a.id}" ${mesmo(a,sel)?'selected':''}>${esc(rotulo(a))}</option>`).join('')}</select><div id="selc" style="margin-top:12px"></div>`}
-  else h+=`<div class="stu"><b>Comece por aqui</b><div class="mut" style="margin-top:4px">Cadastre o primeiro aluno ou carregue os exemplos para conhecer o app.</div></div>`;
+  else h+=`<div class="stu"><b>Comece por aqui</b><div class="mut" style="margin-top:4px">Cadastre o primeiro aluno, cole um treino em texto ou importe um arquivo.</div></div>`;
   if(al.length&&(diasBackup()===null||diasBackup()>=7))h+=`<div class="pal" style="cursor:pointer" id="bkp">💾 ${diasBackup()===null?'Você ainda não fez backup em arquivo.':'Último backup há '+diasBackup()+' dias.'} Toque para salvar um arquivo de segurança.</div>`;
-  h+=`<div class="sec">Atalhos</div><div class="tiles"><button class="tile p" id="novo"><em>+</em><span>Novo aluno</span></button><button class="tile" id="lib"><em>≡</em><span>Exercícios</span></button><button class="tile" id="txt"><em>✎</em><span>Colar treino (texto)</span></button><button class="tile" id="imp"><em>↑</em><span>Importar aluno</span></button><button class="tile" id="demo"><em>★</em><span>Alunos de exemplo</span></button><button class="tile r" id="ajus"><em>⚙</em><span>Ajustes</span></button></div>`;
+  h+=`<div class="sec">Atalhos</div><div class="tiles"><button class="tile p" id="novo"><em>+</em><span>Novo aluno</span></button><button class="tile" id="lib"><em>≡</em><span>Exercícios</span></button><button class="tile" id="txt"><em>✎</em><span>Colar treino (texto)</span></button><button class="tile" id="imp"><em>↑</em><span>Importar aluno</span></button><button class="tile r" id="ajus"><em>⚙</em><span>Ajustes</span></button></div>`;
   app.innerHTML=h;
   app.querySelectorAll('[data-r]').forEach(e=>e.onclick=()=>abrir(aluno(e.dataset.r)));
   bindPend(app,render);$('#npend').onclick=()=>novaPend('','trocar');
@@ -208,7 +208,7 @@ function home(app){
   if($('#sel')){$('#sel').onchange=()=>{show()};show()}
   $('#novo').onclick=novoAluno;
   if($('#bkp'))$('#bkp').onclick=()=>{backupTudo();render()};
-  $('#txt').onclick=()=>go({n:'txt'});$('#lib').onclick=()=>go({n:'lib'});$('#ajus').onclick=()=>go({n:'ajustes'});$('#imp').onclick=importar;$('#demo').onclick=demo;
+  $('#txt').onclick=()=>go({n:'txt'});$('#lib').onclick=()=>go({n:'lib'});$('#ajus').onclick=()=>go({n:'ajustes'});$('#imp').onclick=importar;
 }
 function mkAluno(nome,un){const a={id:uid(),nome:nome.trim(),detalhes:'',anamnese:'',fixa:'',unidades:[{id:uid(),nome:(un||'Principal').trim()}],treinos:[],sessoes:[],ativo:null};a.un=a.unidades[0].id;ensureProg(a);return a}
 async function novoAluno(){
@@ -218,35 +218,6 @@ async function novoAluno(){
   if(!r)return;const a=mkAluno(r.n,r.u);db.alunos.push(a);
   if(r.c){const b=mkAluno(r.b,r.u);db.alunos.push(b);a.parceiroId=b.id;b.parceiroId=a.id}
   db.ultimo=a.id;save();render()}
-function demo(){
-  const G=n=>db.lib.find(x=>x.nome===n);
-  const ex=(n,g,series,reps,carga,metodo='Tradicional',descanso=90,obs='')=>{if(!G(n))db.lib.push({id:uid(),nome:n,grupo:g});return{id:uid(),nome:n,grupo:G(n).grupo,series,reps,carga,metodo,descanso,obs}};
-  const mk=(nome,det,ana,fixa,unids,prog,tA,tB)=>{
-    const us=unids.map(n=>({id:uid(),nome:n})),pr={id:uid(),nome:prog,arq:false,criado:Date.now()-40*864e5};
-    const a={id:uid(),nome,detalhes:det,anamnese:ana,fixa,unidades:us,un:us[0].id,programas:[pr],prog:pr.id,treinos:[],sessoes:[],ativo:null};
-    us.forEach((u,ui)=>[['Treino A',tA],['Treino B',tB]].forEach(([tn,fn])=>a.treinos.push({id:uid(),nome:tn,unidadeId:u.id,programaId:pr.id,exs:fn().map(e=>({...e,id:uid(),carga:+(e.carga*(ui?0.9:1)).toFixed(1)}))})));
-    // histórico fictício: 6 treinos nas últimas ~3 semanas, cargas subindo
-    const base=a.treinos.filter(t=>t.unidadeId===us[0].id);
-    for(let k=0;k<6;k++){const t=base[k%2],f=0.88+0.024*k;
-      a.sessoes.unshift({id:uid(),data:Date.now()-(6-k)*3.5*864e5,duracao:(50+k)*6e4,treinoId:t.id,treinoNome:t.nome,programa:pr.nome,programaId:pr.id,unidadeId:us[0].id,unidade:us[0].nome,rpe:String(6+k%3),
-        exs:t.exs.map(e=>{const hi=parseReps(e.reps)[1],c=Math.round(e.carga*f*2)/2;return{nome:e.nome,grupo:e.grupo,prescrito:e.reps,pr:false,sets:Array.from({length:e.series},(_,i)=>({carga:c,reps:hi+((k+i)%5===4?1:0),rpe:String(7+(i>1?1:0)),feito:true}))}})})}
-    return a};
-  const novos=[
-   mk('Carla Mendes','32 anos, iniciante, objetivo emagrecimento e condicionamento. Treina 3x/semana.','Sedentária há 2 anos. Sem lesões. Pressão normal.','Iniciante: priorizar técnica; sem falha.',['Smart Fit Centro'],'Adaptação 1',
-     ()=>[ex('Leg press','Quadríceps',3,'12-15',80,'Tradicional',60),ex('Cadeira extensora','Quadríceps',2,'15',25,'Tradicional',60),ex('Supino inclinado','Peito',3,'12',10,'Tradicional',60,'Halteres leves'),ex('Remada baixa','Costas',3,'12',25,'Tradicional',60),ex('Abdominal','Abdômen',3,'15',0,'Tradicional',45)],
-     ()=>[ex('Elevação pélvica','Glúteos',3,'12-15',30,'Tradicional',60),ex('Mesa flexora','Posterior de coxa',3,'12',20,'Tradicional',60),ex('Puxada frontal','Costas',3,'12',30,'Tradicional',60),ex('Desenvolvimento','Ombros',2,'12',6,'Tradicional',60),ex('Panturrilha em pé','Panturrilha',3,'15',30,'Tradicional',45)]),
-   mk('Rafael Souza','26 anos, avançado, objetivo hipertrofia. Divisão A/B, 5x/semana, treina em duas academias.','Sem lesões. Já treina há 6 anos.','⚠ Ombro direito: evitar desenvolvimento por trás da nuca.',['Academia Central','Academia Praia'],'Hipertrofia fase 1',
-     ()=>[ex('Supino reto','Peito',4,'6-8',90,'Tradicional',150),ex('Supino inclinado','Peito',3,'8-10',34,'Rest-pause',120,'Última série rest-pause'),ex('Desenvolvimento','Ombros',3,'8-10',30,'Tradicional',120),ex('Elevação lateral','Ombros',4,'12-15',12,'Drop set',60),ex('Tríceps testa','Tríceps',3,'8-10',35,'Bi-set',90,'Bi-set com tríceps corda'),ex('Tríceps corda','Tríceps',3,'10-12',30,'Bi-set',90)],
-     ()=>[ex('Agachamento','Quadríceps',4,'6-8',140,'Tradicional',180),ex('Stiff','Posterior de coxa',3,'8-10',100,'Tradicional',120),ex('Barra fixa','Costas',4,'6-8',10,'Tradicional',120,'Carga extra em kg'),ex('Remada curvada','Costas',3,'8-10',80,'Tradicional',120),ex('Rosca direta','Bíceps',3,'8-10',40,'Tradicional',90),ex('Panturrilha em pé','Panturrilha',4,'10-12',120,'Pirâmide',60)]),
-   mk('Marcos Oliveira','45 anos, intermediário, retorno após lesão no joelho. Objetivo: saúde e força funcional.','Cirurgia de menisco (joelho esquerdo) há 8 meses, liberado pelo fisio. Hipertensão controlada.','⚠ Joelho esquerdo: sem impacto e sem flexão acima de 90°.',['Bio Ritmo'],'Retorno e fortalecimento',
-     ()=>[ex('Leg press','Quadríceps',3,'10-12',120,'Tradicional',90,'Amplitude até 90°'),ex('Cadeira extensora','Quadríceps',3,'12',30,'Isometria',75,'2s de pausa no topo'),ex('Supino reto','Peito',3,'10',50,'Tradicional',90),ex('Remada baixa','Costas',3,'10-12',45,'Tradicional',90),ex('Tríceps corda','Tríceps',2,'12',25,'Tradicional',60)],
-     ()=>[ex('Mesa flexora','Posterior de coxa',3,'10-12',30,'Tradicional',90),ex('Elevação pélvica','Glúteos',3,'12',60,'Tradicional',75),ex('Puxada frontal','Costas',3,'10',50,'Tradicional',90),ex('Elevação lateral','Ombros',3,'12-15',8,'Tradicional',60),ex('Rosca martelo','Bíceps',3,'10-12',14,'Tradicional',60),ex('Abdominal','Abdômen',3,'15',0,'Tradicional',45)]),
-   mk('Juliana Prado','29 anos, intermediária, foco em glúteos e pernas. Treina 4x/semana.','Sem lesões. Dor lombar leve ocasional em agachamento pesado.','Lombar: priorizar controle; evitar falha no stiff.',['Smart Fit Centro'],'Glúteos fase 1',
-     ()=>[ex('Elevação pélvica','Glúteos',4,'8-10',80,'Tradicional',120),ex('Agachamento','Quadríceps',3,'8-10',60,'Tradicional',120),ex('Leg press','Quadríceps',3,'12',140,'Drop set',90),ex('Cadeira extensora','Quadríceps',3,'12-15',35,'Tradicional',60),ex('Panturrilha em pé','Panturrilha',4,'15',50,'Tradicional',45)],
-     ()=>[ex('Stiff','Posterior de coxa',4,'8-10',50,'Tradicional',120),ex('Mesa flexora','Posterior de coxa',3,'10-12',35,'Tradicional',75),ex('Puxada frontal','Costas',3,'10-12',40,'Tradicional',90),ex('Supino inclinado','Peito',3,'10-12',14,'Tradicional',75),ex('Elevação lateral','Ombros',3,'12-15',6,'Drop set',60),ex('Abdominal','Abdômen',3,'15',0,'Tradicional',45)])];
-  let n=0;novos.forEach(a=>{if(!db.alunos.some(x=>x.nome===a.nome)){db.alunos.push(a);n++}});
-  if(!n){yes('Os 4 alunos de exemplo já estão na lista.','OK');return}
-  db.ultimo=novos[0].id;save();render()}
 // ---- pendências (atenção do aluno, troca de treino com prazo, outras) com prioridade verde/amarelo/vermelho
 const PRIO={r:{n:'Alta',c:'var(--pr)'},a:{n:'Média',c:'var(--pa)'},v:{n:'Baixa',c:'var(--pv)'}};
 const TIPOS={atencao:'Atenção',trocar:'Trocar treino',outro:'Outro'};
