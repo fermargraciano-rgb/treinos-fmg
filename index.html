@@ -78,7 +78,7 @@ h1,h2,h3{letter-spacing:-.01em}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .tile{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:14px;border-radius:10px;border:1.5px solid var(--orange);background:var(--white);min-height:84px}
 .tile em{font-style:normal;font-size:26px;line-height:1;font-weight:800;color:var(--orange)}.tile.p em{color:var(--white)}.tile span{font-size:15px;font-weight:700}.tile.p{background:var(--orange);color:var(--white)}
-.tile.p span{color:var(--white)}
+.tile.p span{color:var(--white)}.tile.r{background:var(--rd);border-color:var(--rd)}.tile.r em,.tile.r span{color:var(--white)}
 .link{background:none;border:0;color:var(--mut);font-size:13px;text-decoration:underline;width:100%;margin-top:6px;font-weight:500}svg text{fill:#6B6B6B;font-size:11px}
 </style></head><body>
 <div id="brand"></div>
@@ -111,7 +111,7 @@ const IDB={ab(){return new Promise((ok,no)=>{try{const q=indexedDB.open('fmg_tre
 let bloqueio=!localStorage.getItem(KEY),espelho=null,saveErr=false;
 function aviso(t){let e=document.getElementById('toast');if(!e){e=document.createElement('div');e.id='toast';e.style.cssText='position:fixed;left:12px;right:12px;top:12px;z-index:99;background:#B3261E;color:#fff;padding:12px;border-radius:10px;font-weight:600';document.body.appendChild(e)}e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',8000)}
 function save(){if(bloqueio)return;try{marcar()}catch(e){}const txt=JSON.stringify(db);
-  try{localStorage.setItem(KEY,txt);saveErr=false}catch(e){if(!saveErr)aviso('Não consegui salvar neste aparelho (memória cheia ou bloqueada). Exporte um backup em Exercícios e ajustes.');saveErr=true}
+  try{localStorage.setItem(KEY,txt);saveErr=false}catch(e){if(!saveErr)aviso('Não consegui salvar neste aparelho (memória cheia ou bloqueada). Exporte um backup em Ajustes.');saveErr=true}
   clearTimeout(espelho);espelho=setTimeout(()=>IDB.set('db',txt),400);try{agendarSync()}catch(e){}}
 if(bloqueio)IDB.get('db').then(v=>{if(v){try{JSON.parse(v);localStorage.setItem(KEY,v);location.reload();return}catch(e){}}bloqueio=false;save()});
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
@@ -165,7 +165,7 @@ const checks=(m,opts)=>modal(`<p style="margin-top:0">${esc(m)}</p>${opts.map((x
 let lastKey='';
 function render(){
   const key=[view.n,view.id||view.a||'',view.t||'',view.tab||''].join('|'),y=window.scrollY;
-  ({home,txt:vTxt,aluno:vAluno,treino:vEditor,ativo:vAtivo,lib:vLib,imp:vImp})[view.n]($('#app'));
+  ({home,txt:vTxt,aluno:vAluno,treino:vEditor,ativo:vAtivo,lib:vLib,ajustes:vAjustes,imp:vImp})[view.n]($('#app'));
   $('#back').style.display=stack.length?'':'none';
   const compacto=view.n==='ativo';
   $('#brand').innerHTML=compacto?'':`<div class="brand ${view.n==='home'?'big':''}"><img src="${LOGO_SRC}" alt="Fernando Marcondes Graciano - Personal Trainer" onerror="this.outerHTML=PH"></div><hr class="rule">`;
@@ -194,7 +194,7 @@ function home(app){
     h+=`<select id="sel" aria-label="Escolher aluno"><option value="">Escolher aluno…</option>${al.map(a=>`<option value="${a.id}" ${mesmo(a,sel)?'selected':''}>${esc(rotulo(a))}</option>`).join('')}</select><div id="selc" style="margin-top:12px"></div>`}
   else h+=`<div class="stu"><b>Comece por aqui</b><div class="mut" style="margin-top:4px">Cadastre o primeiro aluno ou carregue os exemplos para conhecer o app.</div></div>`;
   if(al.length&&(diasBackup()===null||diasBackup()>=7))h+=`<div class="pal" style="cursor:pointer" id="bkp">💾 ${diasBackup()===null?'Você ainda não fez backup em arquivo.':'Último backup há '+diasBackup()+' dias.'} Toque para salvar um arquivo de segurança.</div>`;
-  h+=`<div class="sec">Atalhos</div><div class="tiles"><button class="tile p" id="novo"><em>+</em><span>Novo aluno</span></button><button class="tile" id="lib"><em>≡</em><span>Exercícios e ajustes</span></button><button class="tile" id="txt"><em>✎</em><span>Colar treino (texto)</span></button><button class="tile" id="imp"><em>↑</em><span>Importar aluno</span></button><button class="tile" id="demo"><em>★</em><span>Alunos de exemplo</span></button></div>`;
+  h+=`<div class="sec">Atalhos</div><div class="tiles"><button class="tile p" id="novo"><em>+</em><span>Novo aluno</span></button><button class="tile" id="lib"><em>≡</em><span>Exercícios</span></button><button class="tile" id="txt"><em>✎</em><span>Colar treino (texto)</span></button><button class="tile" id="imp"><em>↑</em><span>Importar aluno</span></button><button class="tile" id="demo"><em>★</em><span>Alunos de exemplo</span></button><button class="tile r" id="ajus"><em>⚙</em><span>Ajustes</span></button></div>`;
   app.innerHTML=h;
   app.querySelectorAll('[data-r]').forEach(e=>e.onclick=()=>abrir(aluno(e.dataset.r)));
   bindPend(app,render);$('#npend').onclick=()=>novaPend('','trocar');
@@ -208,7 +208,7 @@ function home(app){
   if($('#sel')){$('#sel').onchange=()=>{show()};show()}
   $('#novo').onclick=novoAluno;
   if($('#bkp'))$('#bkp').onclick=()=>{backupTudo();render()};
-  $('#txt').onclick=()=>go({n:'txt'});$('#lib').onclick=()=>go({n:'lib'});$('#imp').onclick=importar;$('#demo').onclick=demo;
+  $('#txt').onclick=()=>go({n:'txt'});$('#lib').onclick=()=>go({n:'lib'});$('#ajus').onclick=()=>go({n:'ajustes'});$('#imp').onclick=importar;$('#demo').onclick=demo;
 }
 function mkAluno(nome,un){const a={id:uid(),nome:nome.trim(),detalhes:'',anamnese:'',fixa:'',unidades:[{id:uid(),nome:(un||'Principal').trim()}],treinos:[],sessoes:[],ativo:null};a.un=a.unidades[0].id;ensureProg(a);return a}
 async function novoAluno(){
@@ -617,27 +617,57 @@ async function aplicarBase(txt,substituir){const r=parseBase(txt);if(!r.itens.le
   const base=substituir?[]:db.lib;let add=0,dup=0;
   r.itens.forEach(x=>{if(base.some(l=>semAc(l.nome)===semAc(x.nome)))dup++;else{base.push({id:uid(),nome:x.nome,grupo:x.grupo,tempo:x.tempo!==undefined?x.tempo:ehTempo(x.nome)});add++}});db.lib=base;save();
   await yes(add+' exercício(s) '+(substituir?'na nova base':'adicionado(s)')+(dup?', '+dup+' repetido(s) ignorado(s)':'')+(r.rej.length?'. '+r.rej.length+' linha(s) sem grupo reconhecido: '+r.rej.slice(0,5).join(' | ')+(r.rej.length>5?'…':''):'')+'.','OK');render()}
-function vLib(app){$('#title').textContent='Exercícios e ajustes';
-  app.innerHTML=`<div class="card"><label>Passo de ajuste de carga (kg)</label><input id="passo" inputmode="decimal" value="${fmt(db.passo)}"></div>
-   <div class="card"><div class="h"><b>Minha base de exercícios (${db.lib.length})</b><button class="s p" id="nex">+ Novo</button></div>
+function vLib(app){$('#title').textContent='Exercícios';
+  app.innerHTML=`<div class="card"><div class="h"><b>Minha base de exercícios (${db.lib.length})</b><button class="s p" id="nex">+ Novo</button></div>
    ${[...GRUPOS,''].map(g=>{const L=db.lib.filter(l=>(l.grupo||'')===g).sort((x,y)=>x.nome.localeCompare(y.nome,'pt-BR'));return L.length?`<div class="sec" style="margin:12px 0 4px">${g||'Sem grupo'} (${L.length})</div>`+L.map(l=>`<div class="h" style="padding:3px 0"><span>${esc(l.nome)}</span><span><button class="s" data-mq="${l.id}">${ehMaq(l)?'máquina':'livre'}</button>  <button class="s d" data-del="${l.id}" aria-label="Remover">✕</button></span></div>`).join(''):''}).join('')}</div>
    <div class="card"><b>Importar lista de exercícios</b><div class="mut">Cole um exercício por linha. Pode agrupar por título (<i>Peito:</i>) ou escrever <i>Nome ; Grupo</i>. Aceita também um arquivo .json ou .txt.</div>
    <textarea id="bt" rows="6" placeholder="Peito:&#10;Supino reto&#10;Crucifixo&#10;&#10;Costas:&#10;Puxada frontal&#10;&#10;Rosca scott ; Bíceps"></textarea>
    <div class="row" style="margin-top:8px"><button class="p" id="badd">Adicionar à base</button><button id="brep">Substituir a base</button></div><label>ou arquivo</label><input type="file" id="bfile" accept=".json,.txt,text/plain,application/json"></div>
-   ${nuvemHtml()}${segurancaHtml()}<div class="card"><b>Backup dos dados</b><div class="mut" style="margin:4px 0 8px">Tudo fica salvo neste aparelho, neste navegador, e é gravado a cada mudança. ${db.backupEm?'Último backup em arquivo: '+dt(db.backupEm)+'.':'Você ainda não fez backup em arquivo.'}</div><button id="expall" class="p" style="width:100%">Exportar tudo (backup em arquivo)</button><button id="impall" style="width:100%;margin-top:8px">Restaurar backup de arquivo</button></div>`;
-  $('#passo').onchange=e=>{db.passo=num(e.target.value)||2.5;save()};$('#nex').onclick=async()=>{if(await novoEx())render()};
+`;
+  $('#nex').onclick=async()=>{if(await novoEx())render()};
   app.querySelectorAll('[data-mq]').forEach(b=>b.onclick=()=>{const l=db.lib.find(x=>x.id===b.dataset.mq);l.maq=!ehMaq(l);save();render()});
   app.querySelectorAll('[data-tm]').forEach(b=>b.onclick=()=>{const l=db.lib.find(x=>x.id===b.dataset.tm);l.tempo=!l.tempo;save();render()});
   app.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{const l=db.lib.find(x=>x.id===b.dataset.del);if(await yes('Remover "'+l.nome+'" da base? Treinos já montados não mudam.','Remover')){db.lib=db.lib.filter(x=>x!==l);save();render()}});
   $('#badd').onclick=()=>aplicarBase($('#bt').value,false);$('#brep').onclick=()=>aplicarBase($('#bt').value,true);
   $('#bfile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#bt').value=String(r.result)};r.readAsText(f)};
+}
+function vAjustes(app){$('#title').textContent='Ajustes';
+  app.innerHTML=`<div class="card"><label>Passo de ajuste de carga (kg)</label><input id="passo" inputmode="decimal" value="${fmt(db.passo)}"></div>
+${nuvemHtml()}${segurancaHtml()}<div class="card"><b>Backup dos dados</b><div class="mut" style="margin:4px 0 8px">Tudo fica salvo neste aparelho, neste navegador, e é gravado a cada mudança. ${db.backupEm?'Último backup em arquivo: '+dt(db.backupEm)+'.':'Você ainda não fez backup em arquivo.'}</div><button id="expall" class="p" style="width:100%">Exportar tudo (backup em arquivo)</button><button id="impall" style="width:100%;margin-top:8px">Restaurar backup de arquivo</button></div>`;
+  $('#passo').onchange=e=>{db.passo=num(e.target.value)||2.5;save()};
   $('#expall').onclick=()=>{backupTudo();render()};$('#impall').onclick=importar;nuvemBind(app);segurancaBind(app)}
 // ---- backup
 function baixar(txt,nome){const l=document.createElement('a');l.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));l.download=nome;l.click()}
-function importar(){const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=()=>{const r=new FileReader();r.onload=async()=>{try{const d=JSON.parse(r.result);
-  if(d.tipo==='aluno'){const ex=aluno(d.aluno.id);if(ex&&!await yes('Já existe '+ex.nome+'. Substituir pelos dados do arquivo?','Substituir'))return;
-    if(ex)db.alunos[db.alunos.indexOf(ex)]=ensureProg(d.aluno);else db.alunos.push(ensureProg(d.aluno))}
-  else if(d.tipo==='tudo'){if(!await yes('Substituir TODOS os dados atuais pelos do arquivo?','Substituir'))return;await IDB.set('antes-restauracao',JSON.stringify(db));db=d.db;db.alunos.forEach(ensureProg);db.pend=db.pend||[]}else throw 0;save();stack=[];view={n:'home'};render()}catch{await yes('Arquivo inválido','OK')}};r.readAsText(i.files[0])};i.click()}
+const sigTs=ts=>JSON.stringify(ts.map(t=>({n:t.nome,u:t.unidadeId,e:t.exs.map(e=>[e.nome,e.series,e.reps,e.carga,e.metodo,e.tempo])})));
+function juntarAluno(ex,inc){inc=ensureProg(JSON.parse(JSON.stringify(inc)));ensureProg(ex);
+  const cur=progAtivo(ex),ia=inc.programas.find(p=>p.id===inc.prog);
+  if(cur&&ia&&sigTs(inc.treinos.filter(t=>t.programaId===ia.id))===sigTs(ex.treinos.filter(t=>t.programaId===cur.id)))return 'igual';
+  const pm={},um={},idsP=new Set(ex.programas.map(p=>p.id)),idsT=new Set(ex.treinos.map(t=>t.id));
+  inc.unidades.forEach(u=>{const o=ex.unidades.find(x=>x.id===u.id||semAc(x.nome)===semAc(u.nome));if(o)um[u.id]=o.id;else{ex.unidades.push(u);um[u.id]=u.id}});
+  if(cur&&!cur.arq){cur.arq=true;cur.arqEm=Date.now();cur.nome=cur.nome+' (até '+new Date().toLocaleDateString('pt-BR')+')'}
+  inc.programas.forEach(p=>{if(p.id!==inc.prog&&idsP.has(p.id))return;const id=idsP.has(p.id)?uid():p.id;pm[p.id]=id;ex.programas.push({...p,id,arq:p.id!==inc.prog?p.arq:false});idsP.add(id)});
+  inc.treinos.forEach(t=>{if(!pm[t.programaId])return;const id=idsT.has(t.id)?uid():t.id;idsT.add(id);ex.treinos.push({...t,id,programaId:pm[t.programaId],unidadeId:um[t.unidadeId]||t.unidadeId})});
+  const sid=new Set((ex.sessoes||[]).map(x=>x.id));(inc.sessoes||[]).forEach(x=>{if(!sid.has(x.id))ex.sessoes.push(x)});
+  ex.prog=pm[inc.prog];if(!ex.un||!ex.unidades.find(u=>u.id===ex.un))ex.un=ex.unidades[0]&&ex.unidades[0].id;
+  ['detalhes','anamnese','fixa'].forEach(k=>{if(!ex[k]&&inc[k])ex[k]=inc[k]});if(!ex.parceiroId&&inc.parceiroId)ex.parceiroId=inc.parceiroId;
+  return 'atualizado'}
+function juntarAlunos(lista){let n=0,at=[],ig=0;
+  lista.forEach(a=>{const ex=db.alunos.find(x=>x.id===a.id)||db.alunos.find(x=>semAc(x.nome)===semAc(a.nome));
+    if(!ex){db.alunos.push(ensureProg(a));n++;return}
+    const r=juntarAluno(ex,a);if(r==='igual')ig++;else at.push(ex.nome)});
+  return{n,at,ig}}
+function resumoJuntar(r){return 'Prontinho. '+(r.n?r.n+' aluno(s) novo(s). ':'')+(r.at.length?'Treino novo para: '+r.at.join(', ')+' (o treino antigo foi arquivado). ':'')+(r.ig?r.ig+' já estavam iguais. ':'')+'Os outros alunos não mudaram.'}
+function importar(){const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=()=>{const r=new FileReader();r.onload=async()=>{try{const d=JSON.parse(r.result);let lista,lib;
+  if(d.tipo==='aluno'){lista=[d.aluno]}else if(d.tipo==='tudo'){lista=d.db.alunos;lib=d.db.lib}else throw 0;
+  const novos=lista.filter(a=>!db.alunos.find(x=>x.id===a.id||semAc(x.nome)===semAc(a.nome))).length,exist=lista.length-novos;
+  let modo=0;
+  if(d.tipo==='tudo'&&exist===0&&!db.alunos.length)modo=0;
+  else{const op=['Juntar (recomendado)'];if(d.tipo==='tudo')op.push('Substituir TUDO pelos dados do arquivo');
+    const c=await choice((novos?novos+' aluno(s) novo(s). ':'')+(exist?exist+' já existe(m): o treino atual de cada um será arquivado e o do arquivo passa a valer. ':'')+'Os alunos que não estão no arquivo não mudam.',op);if(c===null)return;modo=c}
+  await IDB.set('antes-restauracao',JSON.stringify(db));
+  if(modo===1){db=d.db;db.alunos.forEach(ensureProg);db.pend=db.pend||[];save();stack=[];view={n:'home'};render();return}
+  if(lib){lib.forEach(l=>{if(!db.lib.find(x=>semAc(x.nome)===semAc(l.nome)))db.lib.push(l)})}
+  const res=juntarAlunos(lista);save();stack=[];view={n:'home'};render();await yes(resumoJuntar(res),'OK')}catch{await yes('Arquivo inválido','OK')}};r.readAsText(i.files[0])};i.click()}
 // reabrir direto no treino em andamento
 // ---- importação por TEXTO (colar o treino escrito como no WhatsApp)
 const STOP_T=new Set(['na','no','de','do','da','com','em','a','o','e','biceps','triceps']);
@@ -796,7 +826,7 @@ function mostrarCodigo(code,prox){tela(`<h2 style="margin-top:0">Código de recu
 async function oferecerFace(){if(!await faceOk()||A.get().cred)return liberar();
   tela(`<h2 style="margin-top:0">Usar Face ID?</h2><div class="mut">Depois disso você entra com o rosto, sem digitar a senha. A senha continua valendo.</div><div id="lm" class="alerta" style="display:none;margin-top:8px"></div>
    <button class="p" id="lok" style="width:100%;margin-top:12px">Ativar Face ID</button><button id="ln" style="width:100%;margin-top:8px">Agora não</button>`,el=>{
-    el.querySelector('#ln').onclick=liberar;el.querySelector('#lok').onclick=async()=>{try{await ativarFace();liberar()}catch(e){msg(el,'Não consegui ativar o Face ID agora. Você pode tentar depois, em Exercícios e ajustes.')}}})}
+    el.querySelector('#ln').onclick=liberar;el.querySelector('#lok').onclick=async()=>{try{await ativarFace();liberar()}catch(e){msg(el,'Não consegui ativar o Face ID agora. Você pode tentar depois, em Ajustes.')}}})}
 function telaLogin(){const a=A.get();
   tela(`<h2 style="margin-top:0">Entrar</h2>${campo('lu',a.nuvem?'E-mail':'Usuário','text','autocomplete="username" value="'+esc(a.u)+'"')}${campo('l1','Senha','password','autocomplete="current-password"')}
    <div id="lm" class="alerta" style="display:none;margin-top:8px"></div><button class="p" id="lok" style="width:100%;margin-top:12px">Entrar</button>
@@ -833,7 +863,7 @@ function telaNuvem(dentro){const s=S.get()||{};s.url=s.url||CFG_URL;s.key=s.key|
 function iniciarAuth(){if(!temCripto())return;document.body.classList.add('locked');A.get()?telaLogin():telaEscolha()}
 let ocultoEm=0;document.addEventListener('visibilitychange',()=>{const a=A.get();if(!a||!temCripto())return;
   if(document.hidden)ocultoEm=Date.now();else if(a.min>0&&ocultoEm&&Date.now()-ocultoEm>a.min*60000&&!document.body.classList.contains('locked'))bloquear()});
-// ajustes de segurança (tela Exercícios e ajustes)
+// ajustes de segurança (tela Ajustes)
 const pedeSenhas=(titulo,campos)=>modal(`<b>${titulo}</b>${campos.map((c,i)=>`<label>${c}</label><input type="password" data-p="${i}" autocomplete="off">`).join('')}<div id="lm" class="alerta" style="display:none;margin-top:8px"></div><div class="row" style="margin-top:12px"><button id="mn">Cancelar</button><button class="p" id="my">OK</button></div>`,(o,done)=>{
   o.querySelector('#mn').onclick=()=>done(null);o.querySelector('#my').onclick=()=>done([...o.querySelectorAll('[data-p]')].map(i=>i.value),o)});
 function segurancaHtml(){const a=A.get();if(!temCripto())return`<div class="card"><b>Acesso por senha</b><div class="mut">Indisponível neste navegador (precisa abrir o app por um endereço seguro, https).</div></div>`;
