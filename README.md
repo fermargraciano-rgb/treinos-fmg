@@ -1,4 +1,4 @@
-# Controle de treinos · FMG Personal Trainer
+# Controle de treinos · FMG Personal Trainer,..
 
 App simples para o personal controlar os treinos dos alunos, no celular ou no computador.
 Funciona direto no navegador, sem servidor e sem cadastro em nenhum serviço.
