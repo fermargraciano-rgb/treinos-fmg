@@ -1,0 +1,24 @@
+{
+  "formato": "treinos-v1",
+  "programa": "Hipertrofia fase 2",
+  "unidade": "Academia Central",
+  "treinos": [
+    {
+      "nome": "Treino A - Peito, ombros e tríceps",
+      "exercicios": [
+        { "nome": "Supino reto", "grupo": "Peito", "series": 4, "reps": "8-10", "carga": 60, "metodo": "Tradicional", "descanso": 120, "obs": "Descer em 2s" },
+        { "nome": "Supino inclinado", "grupo": "Peito", "series": 3, "reps": "10-12", "carga": 24, "metodo": "Rest-pause", "descanso": 90, "obs": "Última série em rest-pause" },
+        { "nome": "Elevação lateral", "grupo": "Ombros", "series": 4, "reps": "12-15", "carga": 8, "metodo": "Drop set", "descanso": 60, "obs": "" },
+        { "nome": "Tríceps corda", "grupo": "Tríceps", "series": 3, "reps": "12", "carga": 30, "metodo": "Tradicional", "descanso": 60, "obs": "" }
+      ]
+    },
+    {
+      "nome": "Treino B - Costas e bíceps",
+      "exercicios": [
+        { "nome": "Puxada frontal", "grupo": "Costas", "series": 4, "reps": "8-10", "carga": 50, "metodo": "Tradicional", "descanso": 90, "obs": "" },
+        { "nome": "Remada baixa", "grupo": "Costas", "series": 3, "reps": "10-12", "carga": 45, "metodo": "Tradicional", "descanso": 90, "obs": "" },
+        { "nome": "Rosca direta", "grupo": "Bíceps", "series": 3, "reps": "10", "carga": 20, "metodo": "Bi-set", "descanso": 60, "obs": "Bi-set com rosca martelo" }
+      ]
+    }
+  ]
+}
