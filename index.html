@@ -602,10 +602,14 @@ function vLib(app){$('#title').textContent='Exercícios';
   $('#badd').onclick=()=>aplicarBase($('#bt').value,false);$('#brep').onclick=()=>aplicarBase($('#bt').value,true);
   $('#bfile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#bt').value=String(r.result)};r.readAsText(f)};
 }
+const APP_VER='2026-11-26 d';const NOMES_EX=['carla mendes','rafael souza','marcos oliveira','juliana prado'];
+const alunosEx=()=>db.alunos.filter(a=>NOMES_EX.includes(semAc(a.nome)));
 function vAjustes(app){$('#title').textContent='Ajustes';
   app.innerHTML=`<div class="card"><label>Passo de ajuste de carga (kg)</label><input id="passo" inputmode="decimal" value="${fmt(db.passo)}"></div>
 ${nuvemHtml()}${segurancaHtml()}<div class="card"><b>Backup dos dados</b><div class="mut" style="margin:4px 0 8px">Tudo fica salvo neste aparelho, neste navegador, e é gravado a cada mudança. ${db.backupEm?'Último backup em arquivo: '+dt(db.backupEm)+'.':'Você ainda não fez backup em arquivo.'}</div><button id="expall" class="p" style="width:100%">Exportar tudo (backup em arquivo)</button><button id="impall" style="width:100%;margin-top:8px">Restaurar backup de arquivo</button></div>`;
   $('#passo').onchange=e=>{db.passo=num(e.target.value)||2.5;save()};
+  const ex=alunosEx();if(ex.length){const d=document.createElement('div');d.className='card';d.innerHTML='<b>Alunos de exemplo</b><div class="mut" style="margin:4px 0 8px">Ainda existem alunos de exemplo salvos: '+esc(ex.map(x=>x.nome).join(', '))+'. Os alunos reais não são tocados.</div><button class="d" id="rmex" style="width:100%">Remover alunos de exemplo</button>';app.insertBefore(d,app.firstChild);d.querySelector('#rmex').onclick=async()=>{if(!await yes('Remover '+ex.length+' aluno(s) de exemplo ('+ex.map(x=>x.nome).join(', ')+')? Só eles são apagados.','Remover'))return;try{if(nuvemAtiva()){const sy=S.get();sy.tomb=[...(sy.tomb||[]),...ex.map(x=>x.id)];S.set(sy)}}catch(e){}db.alunos=db.alunos.filter(x=>!ex.includes(x));save();render()}}
+  app.insertAdjacentHTML('beforeend','<div class="mut" style="text-align:center;margin:12px 0">Versão do app: '+APP_VER+'</div>');
   $('#expall').onclick=()=>{backupTudo();render()};$('#impall').onclick=importar;nuvemBind(app);segurancaBind(app)}
 // ---- backup
 function baixar(txt,nome){const l=document.createElement('a');l.href=URL.createObjectURL(new Blob([txt],{type:'application/json'}));l.download=nome;l.click()}
@@ -943,7 +947,7 @@ function nuvemBind(app){var c=app.querySelector('#nconn');if(c)c.onclick=functio
   app.querySelector('#ndesc').onclick=async function(){if(!await yes('Desconectar este aparelho? Os alunos baixados continuam aqui, mas deixam de sincronizar. Alunos que estão só na nuvem somem desta lista.','Desconectar'))return;
     db.alunos=db.alunos.filter(function(a){return !a.remoto});localStorage.removeItem(SK);var a=A.get();if(a){delete a.nuvem;A.set(a)}estadoSync('');save();render()}}
 iniciarAuth();iniciarNuvem();document.getElementById('lockb').onclick=bloquear;
-if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){const tinha=!!navigator.serviceWorker.controller;navigator.serviceWorker.register('sw.js').then(g=>{g.update&&g.update()}).catch(()=>{});navigator.serviceWorker.addEventListener('controllerchange',()=>{if(tinha&&!window.__rl){window.__rl=1;if(!view||view.n!=='ativo')location.reload()}})}
 const emAnd=db.alunos.find(a=>a.ativo);if(emAnd)view={n:'ativo',id:emAnd.id};
 render();
 </script></body></html>
