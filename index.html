@@ -241,7 +241,9 @@ function criarPend(preAluno,preTipo){return modal(`<b>Nova pendência</b>
 async function novaPend(pre,tipo){const x=await criarPend(pre,tipo);if(x){db.pend.push(x);save();render()}}
 // ---- aluno
 const treinosU=a=>a.treinos.filter(t=>t.unidadeId===a.un&&t.programaId===a.prog);
-function treinoDoDia(a){const ts=treinosU(a);if(!ts.length)return null;const last=a.sessoes.find(s=>(!s.programaId||s.programaId===a.prog)&&ts.some(t=>t.nome===s.treinoNome));
+const ESC={};
+function treinoDoDia(a){const ts=treinosU(a),e=ts.find(t=>t.id===ESC[a.id]);return e||sugeridoDia(a)}
+function sugeridoDia(a){const ts=treinosU(a);if(!ts.length)return null;const last=a.sessoes.find(s=>(!s.programaId||s.programaId===a.prog)&&ts.some(t=>t.nome===s.treinoNome));
   if(!last)return ts[0];return ts[(ts.findIndex(t=>t.nome===last.treinoNome)+1)%ts.length]}
 // ---- academia (unidade) escolhida na hora do treino
 function garantirTreinosUn(a,unId,de){if(a.treinos.some(t=>t.unidadeId===unId&&t.programaId===a.prog))return;
@@ -265,8 +267,9 @@ function vAluno(app){
     const par=(a.parceiroId&&aluno(a.parceiroId)&&!aluno(a.parceiroId).remoto?aluno(a.parceiroId):null);
     if(par)h+=`<div class="card" style="border:2px solid var(--orange)"><b>Treino em casal · ${esc(casalNome(a))}</b><div class="mut" style="margin-bottom:8px">${esc(pn1(par))}: ${par.ativo?progSeries(par):'sem treino em andamento'}</div>${casalBtns(a)}<button id="irpar" style="width:100%;margin-top:8px">⇄ Abrir ${esc(pn1(par))}</button></div>`;
     if(!a.ativo)h+=`<div class="card">${academiaBar(a)}</div>`;
-    h+=t?`<div class="card"><div class="mut">Treino do dia · ${esc(unNome(a))}</div><h2 style="margin:4px 0 8px">${esc(t.nome)}</h2>${t.exs.map(e=>`<div class="mut">${esc(e.nome)} · ${e.series&&e.reps?e.series+'×'+esc(repTxt(e)):'séries/reps a definir'} · ${fmt(e.carga)} kg</div>`).join('')}
-      <button class="p" id="ini" style="width:100%;margin-top:12px">▶ Iniciar treino</button>${treinosU(a).length>1?'<button id="outro" style="width:100%;margin-top:8px">Fazer outro treino hoje</button>':''}</div>`
+    const sug=sugeridoDia(a),tsU=treinosU(a);
+    h+=t?`<div class="card"><div class="mut">Qual treino iniciar · ${esc(unNome(a))}</div>${tsU.length>1?`<div class="chips" style="margin:6px 0">${tsU.map(x=>`<button data-tp="${x.id}" class="${x.id===t.id?'on':''}">${esc(x.nome)}${sug&&x.id===sug.id?' ★':''}</button>`).join('')}</div><div class="mut" style="margin-bottom:4px">★ = próximo da sequência (sugestão). Toque em qualquer um para escolher.</div>`:''}<h2 style="margin:4px 0 8px">${esc(t.nome)}</h2>${t.exs.map(e=>`<div class="mut">${esc(e.nome)} · ${e.series&&e.reps?e.series+'×'+esc(repTxt(e)):'séries/reps a definir'} · ${fmt(e.carga)} kg</div>`).join('')}
+      <button class="p" id="ini" style="width:100%;margin-top:12px">▶ Iniciar ${esc(t.nome)}</button></div>`
       :'<div class="card mut">Nenhum treino nesta unidade. Vá em "Treinos" para criar.</div>';}
   if(tab==='treinos'){const pa=progAtivo(a),narq=a.programas.filter(x=>x.arq).length;
     h+=`<div class="card" style="border:1px solid var(--ac2)"><div class="mut">Programa de treino atual</div><div class="h"><h2 style="margin:4px 0">${esc(pa.nome)}</h2><button class="s" id="rnp">Renomear</button></div><div class="mut">desde ${dt(pa.criado)}</div>
@@ -291,7 +294,7 @@ function vAluno(app){
   bindCasal(a);if($('#acad'))$('#acad').onclick=()=>trocarAcademia(a);
   if($('#irpar'))$('#irpar').onclick=()=>{const p=aluno(a.parceiroId);go(p.ativo?{n:'ativo',id:p.id}:{n:'aluno',id:p.id,tab:'hoje'})};
   if($('#ini'))$('#ini').onclick=()=>iniciar(a,treinoDoDia(a));
-  if($('#outro'))$('#outro').onclick=async()=>{const ts=treinosU(a),i=await choice('Qual treino?',ts.map(t=>t.nome));if(i!==null)iniciar(a,ts[i])};
+  app.querySelectorAll('[data-tp]').forEach(b=>b.onclick=()=>{ESC[a.id]=b.dataset.tp;render()});
   app.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>go({n:'treino',a:a.id,t:b.dataset.e}));
   app.querySelectorAll('[data-cpar]').forEach(b=>b.onclick=async()=>{const p=aluno(a.parceiroId),t=a.treinos.find(x=>x.id===b.dataset.cpar);if(!p||!t)return;
     const pa=progAtivo(p);if(p.treinos.some(x=>x.programaId===pa.id&&x.unidadeId===p.un&&x.nome===t.nome&&x.exs.length)&&!await yes(p.nome+' já tem um "'+t.nome+'". Criar outra cópia?','Copiar'))return;
@@ -485,7 +488,7 @@ async function salvarImportacao(a,R,modoProg){
 function criarAtivo(a,t){
   a.ativo={unidadeId:a.un,treinoId:t.id,treinoNome:t.nome,inicio:Date.now(),exs:t.exs.map(e=>({nome:e.nome,grupo:e.grupo,tempo:!!e.tempo,unid:e.unid,reps:e.reps,metodo:e.metodo,obs:e.obs,descanso:e.descanso,exId:e.id,
     sets:Array.from({length:e.series||1},()=>({carga:e.carga,reps:parseReps(e.reps)[1],rpe:'',feito:false}))}))};save()}
-async function iniciar(a,t,x){if(x&&x.ativo){go({n:'ativo',id:x.id});return}if(!t)return;criarAtivo(a,t);go({n:'ativo',id:a.id})}
+async function iniciar(a,t,x){if(x&&x.ativo){go({n:'ativo',id:x.id});return}if(!t)return;criarAtivo(a,t);delete ESC[a.id];go({n:'ativo',id:a.id})}
 const pn1=x=>x.nome.split(' ')[0];
 function casalNome(a){const p=(a.parceiroId&&aluno(a.parceiroId)&&!aluno(a.parceiroId).remoto?aluno(a.parceiroId):null);if(!p)return a.nome;return [pn1(a),pn1(p)].sort((x,y)=>x.localeCompare(y,'pt')).join(' e ')}
 function casalBtns(a,t){const p=aluno(a.parceiroId);if(!p)return '';const cn=casalNome(a);
@@ -602,7 +605,7 @@ function vLib(app){$('#title').textContent='Exercícios';
   $('#badd').onclick=()=>aplicarBase($('#bt').value,false);$('#brep').onclick=()=>aplicarBase($('#bt').value,true);
   $('#bfile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#bt').value=String(r.result)};r.readAsText(f)};
 }
-const APP_VER='2026-11-26 d';const NOMES_EX=['carla mendes','rafael souza','marcos oliveira','juliana prado'];
+const APP_VER='2026-11-27 a';const NOMES_EX=['carla mendes','rafael souza','marcos oliveira','juliana prado'];
 const alunosEx=()=>db.alunos.filter(a=>NOMES_EX.includes(semAc(a.nome)));
 function vAjustes(app){$('#title').textContent='Ajustes';
   app.innerHTML=`<div class="card"><label>Passo de ajuste de carga (kg)</label><input id="passo" inputmode="decimal" value="${fmt(db.passo)}"></div>
